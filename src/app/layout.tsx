@@ -4,7 +4,7 @@ import NavBar from "@/components/NavBar";
 
 export const metadata: Metadata = {
   title: "flysheets",
-  description: "ตลาดซื้อขายชีทสรุป PDF ระหว่างนักศึกษา",
+  description: "ตลาดซื้อขายชีทสรุป PDF ระหว่างนักเรียน/นักศึกษา",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
