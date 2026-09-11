@@ -3,12 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyAdminNewOrder } from "@/lib/notify";
 
 // Optional automatic verification via a Thai slip-checking API such as
 // https://slipok.com (or swap in easyslip.com / slip2go.com). If no API
 // key is configured, the order is simply left in "verifying" for the
 // admin to approve by hand in /admin -- the app works fully either way.
-async function tryAutoVerify(orderId: string, slipPath: string, expectedAmount: number) {
+// Returns true only when it actually marked the order paid, so the
+// caller knows whether the admin still needs to be notified.
+async function tryAutoVerify(orderId: string, slipPath: string, expectedAmount: number): Promise<boolean> {
   const apiKey = process.env.SLIPOK_API_KEY;
   const branchId = process.env.SLIPOK_BRANCH_ID;
   const tag = `[SlipOK order=${orderId}]`;
@@ -20,7 +23,7 @@ async function tryAutoVerify(orderId: string, slipPath: string, expectedAmount: 
     // were added without redeploying. Logging here means a look at the
     // Vercel Function logs can always tell the two apart.
     console.log(`${tag} skipped: SLIPOK_API_KEY or SLIPOK_BRANCH_ID is not set in this deployment`);
-    return;
+    return false;
   }
 
   try {
@@ -28,7 +31,7 @@ async function tryAutoVerify(orderId: string, slipPath: string, expectedAmount: 
     const { data: blob, error: dlErr } = await admin.storage.from("slips").download(slipPath);
     if (dlErr || !blob) {
       console.error(`${tag} could not download slip from storage:`, dlErr);
-      return;
+      return false;
     }
 
     const body = new FormData();
@@ -47,17 +50,19 @@ async function tryAutoVerify(orderId: string, slipPath: string, expectedAmount: 
     if (res.ok && result?.success && Number(result?.data?.amount) === expectedAmount) {
       await admin.from("orders").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", orderId);
       console.log(`${tag} auto-verified and marked paid`);
-    } else {
-      console.log(
-        `${tag} not auto-verified (expected ${expectedAmount}, got ${result?.data?.amount}) -- left for manual review`
-      );
+      return true;
     }
+    console.log(
+      `${tag} not auto-verified (expected ${expectedAmount}, got ${result?.data?.amount}) -- left for manual review`
+    );
     // A non-match or an error just leaves the order in "verifying" for
     // manual review -- never auto-reject, since false negatives here
     // (blurry photo, OCR hiccup) would block a real paying customer.
+    return false;
   } catch (err) {
     // Network/API error -- fall back to manual review.
     console.error(`${tag} SlipOK request threw:`, err);
+    return false;
   }
 }
 
@@ -86,7 +91,18 @@ export async function recordSlipUpload(orderId: string, slipPath: string): Promi
     .eq("id", orderId);
   if (error) return { error: "อัปเดตสถานะไม่สำเร็จ: " + error.message };
 
-  await tryAutoVerify(orderId, slipPath, order.price);
+  const autoVerified = await tryAutoVerify(orderId, slipPath, order.price);
+
+  // Only bother the admin's inbox when a human actually needs to look at
+  // this -- SlipOK already resolved it above, no email needed.
+  if (!autoVerified) {
+    await notifyAdminNewOrder({
+      id: orderId,
+      listing_title: order.listing_title,
+      buyer_name: order.buyer_name,
+      price: order.price,
+    });
+  }
 
   revalidatePath(`/order/${orderId}`);
   return {};

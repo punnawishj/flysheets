@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
-import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "flysheets",
@@ -30,7 +29,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             ติดต่อเรา
           </Link>
         </footer>
-        <Analytics />
       </body>
     </html>
   );

@@ -52,6 +52,7 @@ Fill in the values from steps 1–2, plus:
 - `ADMIN_EMAIL` — the Google account that should see `/admin` (yours)
 - `PROMPTPAY_ID` — your real PromptPay-linked phone number or 13-digit ID, so the QR on the checkout page actually pays your account
 - `SLIPOK_API_KEY` / `SLIPOK_BRANCH_ID` — optional; leave blank and slip review is manual in `/admin` (works fine, just needs you to click Approve)
+- `RESEND_API_KEY` — optional; emails you whenever a new order needs manual review in `/admin`, via [Resend](https://resend.com) (free tier, sign up with the same email as `ADMIN_EMAIL` for zero extra setup — see the comment in `.env.local.example`). Leave blank and you just check `/admin` yourself instead of getting pinged.
 
 Then install and run:
 
