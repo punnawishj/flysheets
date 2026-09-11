@@ -27,7 +27,7 @@ export default async function HomePage({
         ซื้อขายชีทสรุประหว่างเพื่อนนักเรียน-นักศึกษา
       </h1>
       <p style={{ color: "var(--ink-soft)", marginBottom: 24, maxWidth: "60ch" }}>
-        ผู้ขายได้รับ 80% ของราคาขายทุกครั้ง โอนเข้าบัญชีให้ทุกสัปดาห์
+        สร้างรายได้จากการขายชีทคุณเองได้ที่นี่
       </p>
 
       <form style={{ marginBottom: 24 }}>
