@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { notifyAdminNewListing } from "@/lib/notify";
 
 function fail(message: string): never {
   redirect(`/sell?error=${encodeURIComponent(message)}`);
@@ -70,37 +69,20 @@ export async function createListingRecord(input: {
     return { error: "กรุณาเลือกหมวดหมู่ให้ครบ (ระดับการศึกษา, ระดับชั้น/ปี, วิชา)" };
   }
 
-  // review_status isn't set here -- it defaults to 'pending' (see
-  // schema.sql), so the listing stays invisible to buyers until the
-  // admin approves it in /admin.
-  const { data: newListing, error } = await supabase
-    .from("listings")
-    .insert({
-      seller_id: user.id,
-      seller_name: profile.name,
-      title,
-      education_level: input.educationLevel,
-      grade_level: input.gradeLevel,
-      subject: input.subject,
-      description: input.description?.trim() || "",
-      price,
-      preview_path: input.previewPath,
-      full_path: input.fullPath,
-    })
-    .select("id")
-    .single();
-
-  if (error || !newListing) return { error: "บันทึกรายการไม่สำเร็จ: " + (error?.message ?? "unknown error") };
-
-  await notifyAdminNewListing({
-    id: newListing.id,
-    title,
+  const { error } = await supabase.from("listings").insert({
+    seller_id: user.id,
     seller_name: profile.name,
+    title,
     education_level: input.educationLevel,
     grade_level: input.gradeLevel,
     subject: input.subject,
+    description: input.description?.trim() || "",
     price,
+    preview_path: input.previewPath,
+    full_path: input.fullPath,
   });
+
+  if (error) return { error: "บันทึกรายการไม่สำเร็จ: " + error.message };
 
   revalidatePath("/sell");
   revalidatePath("/");

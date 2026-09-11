@@ -79,33 +79,11 @@ create table if not exists public.listings (
 alter table public.listings add column if not exists education_level text;
 alter table public.listings add column if not exists grade_level text;
 
--- review_status gates a new listing behind admin approval before buyers
--- can see it (the admin gets emailed -- see notifyAdminNewListing in
--- src/lib/notify.ts -- and approves/rejects in /admin). Added without a
--- default/not-null at first on purpose: a plain "add column ... default
--- 'pending' not null" would instantly flip every listing THAT ALREADY
--- EXISTED AND WAS ALREADY LIVE into "pending", yanking real, already-
--- approved listings off the site the moment this migration runs. Instead
--- every pre-existing row is explicitly backfilled to 'approved' (it was
--- already live under the old rules) and only NEW listings default to
--- 'pending' going forward.
-alter table public.listings add column if not exists review_status text;
-update public.listings set review_status = 'approved' where review_status is null;
-alter table public.listings alter column review_status set default 'pending';
-alter table public.listings alter column review_status set not null;
-alter table public.listings drop constraint if exists listings_review_status_check;
-alter table public.listings add constraint listings_review_status_check check (review_status in ('pending','approved','rejected'));
-
 alter table public.listings enable row level security;
 
--- Buyers only ever see a listing once it's both active AND approved --
--- enforced here at the database level so a bug in the app's own query
--- filters could never accidentally leak an unapproved listing. The
--- seller can always see their own regardless of status, so their /sell
--- dashboard can show "pending"/"rejected" listings back to them.
 drop policy if exists "listings_select_active_or_own" on public.listings;
 create policy "listings_select_active_or_own" on public.listings
-  for select using ((active = true and review_status = 'approved') or seller_id = auth.uid());
+  for select using (active = true or seller_id = auth.uid());
 drop policy if exists "listings_insert_own" on public.listings;
 create policy "listings_insert_own" on public.listings
   for insert with check (seller_id = auth.uid());

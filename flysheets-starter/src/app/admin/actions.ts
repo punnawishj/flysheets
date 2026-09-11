@@ -49,22 +49,3 @@ export async function markPayoutPaid(sellerId: string, orderIdsCsv: string) {
   if (error) fail(error.message);
   revalidatePath("/admin");
 }
-
-export async function approveListing(listingId: string) {
-  await requireAdmin();
-  const admin = createAdminClient();
-  const { error } = await admin.from("listings").update({ review_status: "approved" }).eq("id", listingId);
-  if (error) fail(error.message);
-  revalidatePath("/admin");
-  revalidatePath("/");
-  revalidatePath("/sell");
-}
-
-export async function rejectListing(listingId: string) {
-  await requireAdmin();
-  const admin = createAdminClient();
-  const { error } = await admin.from("listings").update({ review_status: "rejected" }).eq("id", listingId);
-  if (error) fail(error.message);
-  revalidatePath("/admin");
-  revalidatePath("/sell");
-}

@@ -92,13 +92,7 @@ export default async function SellPage({
       <div>
         <h2 style={{ fontSize: "1.4rem", marginBottom: 14 }}>สวัสดี {profile.name}</h2>
         <ErrorBanner message={searchParams.error} />
-        <SuccessBanner
-          message={
-            searchParams.created
-              ? "อัปโหลดไฟล์สำเร็จแล้ว! ไฟล์นี้จะยังไม่แสดงให้ผู้ซื้อเห็น จนกว่าแอดมินจะตรวจสอบและอนุมัติ (ปกติภายใน 1 วัน)"
-              : undefined
-          }
-        />
+        <SuccessBanner message={searchParams.created ? "ลงขายชีทสำเร็จแล้ว!" : undefined} />
       </div>
 
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
@@ -118,15 +112,8 @@ export default async function SellPage({
           <div className="grid">
             {myListings.map((l) => (
               <div key={l.id} className="card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                  <div style={{ fontSize: ".72rem", color: "var(--accent-strong)", fontWeight: 700 }}>
-                    {[l.grade_level, l.subject].filter(Boolean).join(" · ")}
-                  </div>
-                  {l.review_status !== "approved" && (
-                    <span className={`pill ${l.review_status === "rejected" ? "rejected" : "verifying"}`} style={{ fontSize: ".7rem" }}>
-                      {reviewStatusLabel(l.review_status)}
-                    </span>
-                  )}
+                <div style={{ fontSize: ".72rem", color: "var(--accent-strong)", fontWeight: 700 }}>
+                  {[l.grade_level, l.subject].filter(Boolean).join(" · ")}
                 </div>
                 <div style={{ fontWeight: 600, margin: "6px 0" }}>{l.title}</div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -175,8 +162,4 @@ export default async function SellPage({
 
 function statusLabel(status: string) {
   return { pending_payment: "รอชำระเงิน", verifying: "กำลังตรวจสอบสลิป", paid: "สำเร็จ", rejected: "ถูกปฏิเสธ" }[status] ?? status;
-}
-
-function reviewStatusLabel(status: string) {
-  return { pending: "รอแอดมินอนุมัติ", rejected: "ถูกปฏิเสธ" }[status] ?? status;
 }

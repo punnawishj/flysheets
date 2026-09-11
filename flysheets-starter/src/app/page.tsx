@@ -63,10 +63,6 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
     .from("listings")
     .select("id, title, subject, grade_level, education_level, price, seller_name")
     .eq("active", true)
-    // RLS already hides other people's pending/rejected listings, but this
-    // keeps a seller's OWN still-pending listing (which RLS does let them
-    // see) out of the public homepage feed too.
-    .eq("review_status", "approved")
     .order("created_at", { ascending: false });
 
   if (q) {

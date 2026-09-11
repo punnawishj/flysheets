@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { baht, formatDateTime } from "@/lib/money";
 import { ErrorBanner } from "@/components/Banner";
-import { approveOrder, rejectOrder, markPayoutPaid, approveListing, rejectListing } from "./actions";
+import { approveOrder, rejectOrder, markPayoutPaid } from "./actions";
 
 export default async function AdminPage({
   searchParams,
@@ -30,24 +30,6 @@ export default async function AdminPage({
   const totalSales = paidOrders.reduce((s, o) => s + o.price, 0);
   const totalCommission = paidOrders.reduce((s, o) => s + o.commission, 0);
   const owed = paidOrders.filter((o) => o.payout_status !== "paid").reduce((s, o) => s + o.seller_amount, 0);
-
-  const { data: pendingListingsData } = await admin
-    .from("listings")
-    .select("*")
-    .eq("review_status", "pending")
-    .eq("active", true)
-    .order("created_at", { ascending: true });
-  const pendingListings = pendingListingsData ?? [];
-  const listingPreviewUrls: Record<string, string | null> = {};
-  const listingFullUrls: Record<string, string | null> = {};
-  for (const l of pendingListings) {
-    if (l.preview_path) {
-      const { data } = admin.storage.from("previews").getPublicUrl(l.preview_path);
-      listingPreviewUrls[l.id] = data.publicUrl;
-    }
-    const { data: fullSigned } = await admin.storage.from("full-files").createSignedUrl(l.full_path, 600);
-    listingFullUrls[l.id] = fullSigned?.signedUrl ?? null;
-  }
 
   const verifyingOrders = allOrders.filter((o) => o.status === "verifying");
   const slipUrls: Record<string, string | null> = {};
@@ -93,49 +75,6 @@ export default async function AdminPage({
         <div className="card"><div style={{ color: "var(--ink-faint)", fontSize: ".8rem" }}>ยอดขายรวม</div><div className="tab" style={{ fontSize: "1.4rem", fontWeight: 700 }}>฿{baht(totalSales)}</div></div>
         <div className="card"><div style={{ color: "var(--ink-faint)", fontSize: ".8rem" }}>รายได้ค่าคอมมิชชั่น (20%)</div><div className="tab" style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--accent-strong)" }}>฿{baht(totalCommission)}</div></div>
         <div className="card"><div style={{ color: "var(--ink-faint)", fontSize: ".8rem" }}>ค้างจ่ายผู้ขาย</div><div className="tab price" style={{ fontSize: "1.4rem" }}>฿{baht(owed)}</div></div>
-      </div>
-
-      <div>
-        <h3 style={{ marginBottom: 6 }}>ไฟล์ใหม่รอตรวจสอบก่อนลงขาย</h3>
-        <p style={{ color: "var(--ink-faint)", fontSize: ".82rem", marginBottom: 14 }}>
-          ไฟล์ที่ลงขายใหม่จะยังไม่แสดงให้ผู้ซื้อเห็นจนกว่าจะกดอนุมัติที่นี่
-        </p>
-        {pendingListings.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {pendingListings.map((l) => (
-              <div key={l.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{l.title} · ฿{baht(l.price)}</div>
-                  <div style={{ color: "var(--ink-faint)", fontSize: ".82rem" }}>
-                    ผู้ขาย {l.seller_name} · {[l.education_level, l.grade_level, l.subject].filter(Boolean).join(" · ")} · {formatDateTime(l.created_at)}
-                  </div>
-                  <div style={{ display: "flex", gap: 14, marginTop: 2 }}>
-                    {listingPreviewUrls[l.id] && (
-                      <a href={listingPreviewUrls[l.id]!} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-strong)", fontWeight: 600, fontSize: ".85rem" }}>
-                        ดูไฟล์ตัวอย่าง
-                      </a>
-                    )}
-                    {listingFullUrls[l.id] && (
-                      <a href={listingFullUrls[l.id]!} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-strong)", fontWeight: 600, fontSize: ".85rem" }}>
-                        ดูไฟล์ฉบับเต็ม
-                      </a>
-                    )}
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <form action={approveListing.bind(null, l.id)}>
-                    <button type="submit" className="btn success" style={{ padding: "8px 14px", fontSize: ".85rem" }}>อนุมัติ</button>
-                  </form>
-                  <form action={rejectListing.bind(null, l.id)}>
-                    <button type="submit" className="btn outline" style={{ padding: "8px 14px", fontSize: ".85rem" }}>ปฏิเสธ</button>
-                  </form>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="empty">ไม่มีไฟล์รอตรวจสอบ</div>
-        )}
       </div>
 
       <div>

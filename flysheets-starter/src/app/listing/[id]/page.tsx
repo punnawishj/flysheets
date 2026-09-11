@@ -37,16 +37,6 @@ export default async function ListingPage({
   return (
     <div className="section">
       <ErrorBanner message={searchParams.error} />
-      {isOwner && listing.review_status === "pending" && (
-        <div className="banner" style={{ background: "var(--accent-soft)", color: "var(--accent-strong)", padding: "12px 16px", borderRadius: 12, marginBottom: 16 }}>
-          ไฟล์นี้กำลังรอแอดมินตรวจสอบก่อนแสดงให้ผู้ซื้อเห็น
-        </div>
-      )}
-      {isOwner && listing.review_status === "rejected" && (
-        <div className="banner" style={{ background: "var(--danger-soft)", color: "var(--danger)", padding: "12px 16px", borderRadius: 12, marginBottom: 16 }}>
-          ไฟล์นี้ถูกแอดมินปฏิเสธ จึงไม่แสดงให้ผู้ซื้อเห็น ติดต่อแอดมินหากมีคำถาม
-        </div>
-      )}
       <div className="two-col">
       <div>
         <div style={{ fontSize: ".78rem", fontWeight: 700, color: "var(--accent-strong)" }}>
