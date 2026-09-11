@@ -77,7 +77,7 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
   return (
     <div className="section">
       <h1 className="disp" style={{ fontSize: "2rem", marginBottom: 8 }}>
-        ซื้อขายชีทสรุประหว่างเพื่อนนักศึกษา
+        ซื้อขายชีทสรุประหว่างเพื่อนนักเรียน-นักศึกษา
       </h1>
       <p style={{ color: "var(--ink-soft)", marginBottom: 24, maxWidth: "60ch" }}>
         สร้างรายได้จากการขายชีทคุณเองได้ที่นี่
